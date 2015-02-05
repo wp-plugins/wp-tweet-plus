@@ -4,7 +4,7 @@ Donate link: http://crudlab.com
 Tags: tweet, tweet button, Twitter, Twitter share, tweets, post, pages, share, twitter api, hashtag
 Requires at least: 4.1
 Tested up to: 4.1
-Stable tag: 4.3
+Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
