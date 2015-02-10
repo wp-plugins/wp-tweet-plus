@@ -1,7 +1,7 @@
 === WP Tweet Plus ===
 Contributors: amirk27
 Donate link: http://crudlab.com
-Tags: tweet, tweet button, Twitter, Twitter share, tweets, post, pages, share, twitter api, hashtag
+Tags: tweet, tweet button, Twitter, Twitter share, tweets, post, pages, share, twitter api, hashtag,
 Requires at least: 4.1
 Tested up to: 4.1
 Stable tag: 1.0
