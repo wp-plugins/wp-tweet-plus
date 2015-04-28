@@ -1,10 +1,10 @@
 === WP Tweet Plus ===
 Contributors: amirk27
 Donate link: https://www.2checkout.com/checkout/purchase?sid=102444448&quantity=1&product_id=1
-Tags: tweet, tweet button, Twitter, Twitter share, tweets, post, pages, share, twitter api, hashtag,
-Requires at least: 4.1
-Tested up to: 4.1
-Stable tag: 1.0
+Tags: tweet, tweet button, Twitter, Twitter share, tweets, post, pages, share, twitter api, hashtag
+Requires at least: 3.0
+Tested up to: 4.2
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,6 +72,11 @@ Yes, the Tweet Button works over HTTPS.
 
 
 == Changelog ==
+
+= 1.2.2 =
+* Simplified Pages and Posts selection
+* Fixed Permalink  issue
+* Added Settings link
 
 
 = 1.0.0 =

@@ -3,7 +3,7 @@
   Plugin Name: WP Tweet Plus
   Description: WP Tweet Plus allows you to add tweet button to your Wordpress site.
   Author: <a href="http://crudlab.com/">CRUDLab</a>
-  Version: 1.0.0
+  Version: 1.2.2
  */
 require_once( ABSPATH . "wp-includes/pluggable.php" );
 add_action('admin_menu', 'wptb_plugin_setup_menu');
@@ -13,6 +13,16 @@ register_deactivation_hook(__FILE__, 'wptb_uninstall_hook');
 function wptb_shortcode($atts, $content = null) {
     return '<span class="wptb_caption"></span>';
 }
+
+// Add settings link on plugin page
+function crudlab_tweet_plus_button_settings_link($links) {
+    $settings_link = '<a href="admin.php?page=wp-tweet-button&edit=1">Settings</a>';
+    array_unshift($links, $settings_link);
+    return $links;
+}
+
+$plugin = plugin_basename(__FILE__);
+add_filter("plugin_action_links_$plugin", 'crudlab_tweet_plus_button_settings_link');
 
 add_shortcode('wptweet', 'wp_tweet_button');
 
@@ -77,7 +87,8 @@ function wp_tweet_button($content = NULL) {
         $tweet_text = get_the_title();
     }
     if ($share_opt == 0) {
-        $share_url = get_post_permalink();
+        //$share_url = get_post_permalink();
+        $share_url = get_the_permalink(get_the_ID());
     }
     if ($share_opt == 2) {
         $share_url = get_site_url();
@@ -99,46 +110,44 @@ function wp_tweet_button($content = NULL) {
     if ($status == 0) {
         $str = $content;
     } else {
-        ?>
-        <?php
-        if ($display == 3) {
-            if ($beforeafter == 'before') {
-                $str = $fb . $content;
-            } else {
-                $str = $content . $fb;
-            }
-        }
-        if ($display == 2) {
-            if (is_home() || is_front_page()) {
-                if ($beforeafter == 'before') {
-                    $str = $fb . $content;
-                } else {
-                    $str = $content . $fb;
+        if ($content == NULL) {
+            $str = $fb;
+        } {
+
+            if ($display & 2) {
+                if (is_page() && !defined('is_front_page')) {
+                    if ($beforeafter == 'before') {
+                        $str = $fb . $content;
+                    } else {
+                        $str = $content . $fb;
+                    }
                 }
             }
-        }
-        if ($display == 1) {
-            if (!is_home() && !is_front_page()) {
-                if ($beforeafter == 'before') {
-                    $str = $fb . $content;
-                } else {
-                    $str = $content . $fb;
+            if ($display & 1) {
+                if (is_front_page()) {
+                    if ($beforeafter == 'before') {
+                        $str = $fb . $content;
+                    } else {
+                        $str = $content . $fb;
+                    }
                 }
             }
-        }
-        if ($display == 4) {
-            if ($beforeafter == 'before') {
-                $str = $fb . $content;
-            } else {
-                $str = $content . $fb;
+            if ($display & 4) {
+                if (is_single()) {
+                    if ($beforeafter == 'before') {
+                        $str = $fb . $content;
+                    } else {
+                        $str = $content . $fb;
+                    }
+                }
             }
-        }
-        if ($display == 5 && $content == NULL) {
-                $str = $fb;
+            if ($display & 8) {
+                //$str = $content . $fb;
+            }
         }
     }
     $except_check = true;
-    if ($display == 4) {
+    if ($display & 8) {
         @$expect_ids_arrays = split(',', $except_ids);
         foreach ($expect_ids_arrays as $id) {
             if (trim($id) == $post_id) {
@@ -165,7 +174,7 @@ if (isset($_REQUEST['magic_data'])) {
     );
     $posts = get_posts($args);
     foreach ($posts as $post) {
-        $data[] = array('id'=>$post->ID ,'name'=>$post->post_title);
+        $data[] = array('id' => $post->ID, 'name' => $post->post_title);
     }
 
     echo json_encode($data);
@@ -175,14 +184,20 @@ if (isset($_REQUEST['magic_data'])) {
 if (isset($_REQUEST['update_wptb'])) {
     //die;
     $except_ids = $_REQUEST['except_ids'];
-    
-    $except_ids = implode(', ',$except_ids);
+
+    $except_ids = implode(', ', $except_ids);
 //    echo $except_ids;
 //    print_r($_REQUEST);
 //    exit();
     global $wpdb;
     $type = '';
-    $display = @mysql_real_escape_string($_REQUEST['display']);
+
+    $display = $_REQUEST['display'];
+    $display_val = 0;
+    foreach ($display as $d) {
+        $display_val += @mysql_real_escape_string($d);
+    }
+
     $beforeafter = @mysql_real_escape_string($_REQUEST['beforeafter']);
     $display_as = @mysql_real_escape_string($_REQUEST['display_as']);
     $position = @mysql_real_escape_string($_REQUEST['position']);
@@ -209,7 +224,7 @@ if (isset($_REQUEST['update_wptb'])) {
 
     $table = $wpdb->prefix . 'wptb';
     $data1 = array(
-        'display' => $display,
+        'display' => $display_val,
         'display_as' => $display_as,
         'position' => $position,
         'beforeafter' => $beforeafter,
@@ -266,6 +281,18 @@ function wptb_init() {
     }
     $data = '';
     $data_array = array();
+    if ($myrows[0]->display & 1) {
+        $display[1] = 'checked';
+    };
+    if ($myrows[0]->display & 2) {
+        $display[2] = 'checked';
+    };
+    if ($myrows[0]->display & 4) {
+        $display[4] = 'checked';
+    };
+    if ($myrows[0]->display & 8) {
+        $display[8] = 'checked';
+    };
 
     $display_as[$myrows[0]->display_as] = 'checked';
     $beforeafter[$myrows[0]->beforeafter] = 'checked';
@@ -276,7 +303,6 @@ function wptb_init() {
     $language[$myrows[0]->language] = 'checked';
     $share_opt[$myrows[0]->share_opt] = 'checked';
     $tweet_opt[$myrows[0]->tweet_opt] = 'checked';
-    $display[$myrows[0]->display] = ' selected="selected"';
     $language[$myrows[0]->language] = ' selected="selected"';
     ?>
     <div id="test-popup" class="wptb_white-popup wptb_mfp-with-anim wptb_ mfp-hide"></div>
@@ -340,60 +366,49 @@ function wptb_init() {
                                                 </td>
                                             </tr>
                                             <tr><td colspan="2"><hr></td></tr>
+
                                             <tr>
-                                                <td style="width: 160px; text-align: right; padding-right: 15px;">
-                                                    <label>Where to display? </label>
+                                                <td style="width: 160px; vertical-align: top;text-align: right; padding-right: 15px;">
+                                                    <label style="margin-top:8px;">Where to display? </label>
                                                 </td>
                                                 <td>
-                                                    <div class="wptb_form-group">
-                                                        <select class="wptb_form-control" name="display" onchange="if (this.value == 4) {
-                                                                        jQuery('.wptb_exclude').show(200)
+                                                    <div class="wpfblbox_form-group">
+                                                        <input type="checkbox" id="display1" name="display[]" <?php echo @$display['1']; ?> value="1" class="wpfblbox_form-control wpfblbox_check" style="float:left; margin-top: 0;"><label for="display1">Homepage</label>
+                                                        <input type="checkbox" id="display2" name="display[]" <?php echo @$display['2']; ?> value="2" class="wpfblbox_form-control wpfblbox_check" style="float:left; margin-top: 0;"><label for="display2">All pages</label>
+                                                        <input type="checkbox" id="display4" name="display[]" <?php echo @$display['4']; ?> value="4" class="wpfblbox_form-control wpfblbox_check" style="float:left; margin-top: 0;"><label for="display4">All posts</label>
+                                                        <input type="checkbox" id="display8" onchange="if (this.checked) {
+                                                                        jQuery('.wpfblbox_exclude').show(200)
                                                                     } else {
-                                                                        jQuery('.wptb_exclude').hide(200)
-                                                                    }
-                                                                    if (this.value == 5) {
-                                                                        jQuery('.wptb_manual').show(200)
-                                                                    } else {
-                                                                        jQuery('.wptb_manual').hide(200)
-                                                                    }">
-                                                            <option value="2" <?php echo @$display[2]; ?>>Homepage only</option>
-                                                            <option value="1" <?php echo @$display[1]; ?>>All other pages/posts except Homepage</option>
-                                                            <option value="3" <?php echo @$display[3]; ?>>All pages/posts</option>
-                                                            <option value="4" <?php echo @$display[4]; ?>>All pages/posts except followings</option>
-                                                            <option value="5" <?php echo @$display[5]; ?>>Manual</option>
-                                                        </select>
+                                                                        jQuery('.wpfblbox_exclude').hide(200)
+                                                                    }" name="display[]" <?php echo @$display['8']; ?> value="8" class="wpfblbox_form-control wpfblbox_check" style="float:left; margin-top: 0;"><label for="display8">Exclude following pages and posts</label>
                                                     </div>
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td style="vertical-align: top;width: 160px; padding-top: 10px;text-align: right; padding-right: 15px;">
-                                                    <label class="wptb_exclude" style="display:<?php
-                                                    if ($myrows[0]->display == 4) {
+                                                    <label class="wpfblbox_exclude" style="display:<?php
+                                                    if ($myrows[0]->display & 8) {
                                                         echo 'block';
                                                     } else {
                                                         echo 'none';
                                                     }
-                                                    ?>">Exclude Page/Post</label>
+    ?>">Exclude Page/Post</label>
                                                 </td>
                                                 <td>
-                                                    <div class="wptb_form-group wptb_exclude" style="display:<?php
-                                                    if ($myrows[0]->display == 4) {
-                                                        echo 'block';
-                                                    } else {
-                                                        echo 'none';
-                                                    }
-                                                    ?>">
-                                                       <div id="magicsuggest" value="[<?php echo $myrows[0]->except_ids; ?>]" name="except_ids[]" style="width:auto !important; background: #fff; border: thin solid #cccccc;"></div>
+                                                    <div class="wpfblbox_form-group wpfblbox_exclude" style="display:<?php
+                                                if ($myrows[0]->display & 8) {
+                                                    echo 'block';
+                                                } else {
+                                                    echo 'none';
+                                                }
+    ?>">
+                                                        <div id="magicsuggest" value="[<?php echo $myrows[0]->except_ids; ?>]" name="except_ids[]" style="width:auto !important; background: #fff; border: thin solid #cccccc;"></div>
                                                     </div>
                                                 </td>
                                             </tr>
-                                            <tr class="wptb_manual" style="display:<?php
-                                                    if ($myrows[0]->display == 5) {
-                                                        echo 'table-row';
-                                                    } else {
-                                                        echo 'none';
-                                                    }
-                                                    ?>">
+                                            <tr><td colspan="2"><hr></td></tr>
+
+                                            <tr class="wptb_manual" style="display:table-row">
                                                 <td style="width: 160px; text-align: right; padding-right: 15px;">
                                                     <label>Code Snippet </label>
                                                 </td>
@@ -403,13 +418,7 @@ function wptb_init() {
                                                     </div>
                                                 </td>
                                             </tr>
-                                            <tr class="wptb_manual" style="display:<?php
-                                                    if ($myrows[0]->display == 5) {
-                                                        echo 'table-row';
-                                                    } else {
-                                                        echo 'none';
-                                                    }
-                                                    ?>">
+                                            <tr class="wptb_manual" style="display:table-row">
                                                 <td style="width: 160px; text-align: right; padding-right: 15px;">
                                                     <label>Shortcode </label>
                                                 </td>
@@ -419,6 +428,7 @@ function wptb_init() {
                                                     </div>
                                                 </td>
                                             </tr>
+                                            <tr><td colspan="2"><hr></td></tr>
                                             <tr>
                                                 <td style="width: 160px;">&nbsp;</td>
                                                 <td>
@@ -554,12 +564,12 @@ function wptb_init() {
                                             </tr>
 
                                             <tr>
-                                                <td colspan="4">
+                                                <td colspan="2">
                                                     <hr>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="4">
+                                                <td colspan="2">
                                                     <div id="u_0_18" class="wptb_preview">
 
                                                         <div id="twtbox"></div>    
@@ -568,22 +578,22 @@ function wptb_init() {
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="4">
+                                                <td colspan="2">
                                                     <hr>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="2"><button type="submit" name="update_wptb" class="wptb_btn wptb_btn-primary">Save Settings</button></td>
-                                                <td colspan="2">
+                                                <td colspan="1"><button type="submit" name="update_wptb" class="wptb_btn wptb_btn-primary">Save Settings</button></td>
+                                                <td colspan="1">
                                                     <div class="wptb_form-group wptb_switch" style="float: right;">
-                                                        <?php
-                                                        $img = '';
-                                                        if ($myrows[0]->status == 0) {
-                                                            $img = 'off.png';
-                                                        } else {
-                                                            $img = 'on.png';
-                                                        }
-                                                        ?>
+    <?php
+    $img = '';
+    if ($myrows[0]->status == 0) {
+        $img = 'off.png';
+    } else {
+        $img = 'on.png';
+    }
+    ?>
                                                         <img onclick="wptb_switchonoff(this)" src="<?php echo plugins_url('/images/' . $img, __FILE__); ?>"> 
                                                     </div>
                                                 </td>
@@ -593,11 +603,25 @@ function wptb_init() {
                                 </form>
                             </div>
                         </div>
+
                         <div class="wptb_col wptb_col-adv" style="width:25%;">
                             <div class="wptb_where">
-                                <h2 style="text-align:center;">   
-                                    Our Other Products
+                                <h2 style="text-align:left; line-height: 28px;">   
+                                    <a href="http://crudlab.com" target="_blank">CRUDLab</a> has following plugins for you:
                                 </h2>
+                                <hr>
+
+                                <div>
+                                    <div style="font-weight: bold;font-size: 20px; margin-top: 10px;">
+                                        CRUDLab Facebook Like Box
+                                    </div>
+                                    <div style="margin-top:10px; margin-bottom: 8px;">
+                                        CRUDLab Facebook Like Box allows you to add Facebook like box to your wordpress blog. It allows webmasters to promote their Pages and embed a simple feed of content from a Page into their WordPress sites.
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <a href="https://wordpress.org/plugins/crudlab-facebook-like-box/" target="_blank" class="wptb_btn wptb_btn-success" style="width:90%; margin-top:5px; margin-bottom: 5px; ">Download</a>
+                                    </div>
+                                </div>
                                 <hr>
                                 <div>
                                     <div style="font-weight: bold;font-size: 20px; margin-top: 10px;">
@@ -622,8 +646,31 @@ function wptb_init() {
                                         <a href="https://wordpress.org/plugins/wp-like-button/" target="_blank" class="wptb_btn wptb_btn-success" style="width:90%; margin-top:5px; margin-bottom: 5px; ">Download</a>
                                     </div>
                                 </div>
+                                <hr>
+                                <div>
+                                    <div style="font-weight: bold;font-size: 20px; margin-top: 10px;">
+                                        CRUDLab Google Plus Button
+                                    </div>
+                                    <div style="margin-top:10px; margin-bottom: 8px;">
+                                        CRUDLab Google Plus button let visitors recommend your content on Google Search and share it on Google+.
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <a href="https://wordpress.org/plugins/crudlab-google-plus/" target="_blank" class="wptb_btn wptb_btn-success" style="width:90%; margin-top:5px; margin-bottom: 5px; ">Download</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="wptb_where" style="margin-top:15px;">
+                                <span>
+                                    Your donation helps us make great products
+                                </span>
+                                <a href="https://www.2checkout.com/checkout/purchase?sid=102444448&quantity=1&product_id=1" target="_blank">
+                                    <img style="width:100%;" src="<?php echo plugins_url('/images/donate.png', __FILE__); ?>">
+                                </a>
                             </div>
                         </div>
+
+
+
                         <div class="wptb_clearfix"></div>
                     </div>
 
