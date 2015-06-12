@@ -3,7 +3,7 @@
   Plugin Name: WP Tweet Plus
   Description: WP Tweet Plus allows you to add tweet button to your Wordpress site.
   Author: <a href="http://crudlab.com/">CRUDLab</a>
-  Version: 1.2.2
+  Version: 1.2.3
  */
 require_once( ABSPATH . "wp-includes/pluggable.php" );
 add_action('admin_menu', 'wptb_plugin_setup_menu');
@@ -195,24 +195,24 @@ if (isset($_REQUEST['update_wptb'])) {
     $display = $_REQUEST['display'];
     $display_val = 0;
     foreach ($display as $d) {
-        $display_val += @mysql_real_escape_string($d);
+        $display_val += @sanitize_text_field($d);
     }
 
-    $beforeafter = @mysql_real_escape_string($_REQUEST['beforeafter']);
-    $display_as = @mysql_real_escape_string($_REQUEST['display_as']);
-    $position = @mysql_real_escape_string($_REQUEST['position']);
+    $beforeafter = @sanitize_text_field($_REQUEST['beforeafter']);
+    $display_as = @sanitize_text_field($_REQUEST['display_as']);
+    $position = @sanitize_text_field($_REQUEST['position']);
 
-    $share_opt = @mysql_real_escape_string($_REQUEST['share_opt']);
-    $share_url = @mysql_real_escape_string($_REQUEST['url']);
-    $tweet_opt = @mysql_real_escape_string($_REQUEST['tweet_opt']);
-    $tweet_text = @mysql_real_escape_string($_REQUEST['tweet_text']);
-    $via = @mysql_real_escape_string($_REQUEST['via']);
-    $recommend = @mysql_real_escape_string($_REQUEST['recommend']);
-    $hashtag = @mysql_real_escape_string($_REQUEST['hashtag']);
-    $large_btn = @mysql_real_escape_string($_REQUEST['large_btn']);
-    $opt_out = @mysql_real_escape_string($_REQUEST['opt_out']);
-    $language = @mysql_real_escape_string($_REQUEST['language']);
-    $edit_id = @mysql_real_escape_string($_REQUEST['edit']);
+    $share_opt = @sanitize_text_field($_REQUEST['share_opt']);
+    $share_url = @sanitize_text_field($_REQUEST['url']);
+    $tweet_opt = @sanitize_text_field($_REQUEST['tweet_opt']);
+    $tweet_text = @sanitize_text_field($_REQUEST['tweet_text']);
+    $via = @sanitize_text_field($_REQUEST['via']);
+    $recommend = @sanitize_text_field($_REQUEST['recommend']);
+    $hashtag = @sanitize_text_field($_REQUEST['hashtag']);
+    $large_btn = @sanitize_text_field($_REQUEST['large_btn']);
+    $opt_out = @sanitize_text_field($_REQUEST['opt_out']);
+    $language = @sanitize_text_field($_REQUEST['language']);
+    $edit_id = @sanitize_text_field($_REQUEST['edit']);
 
     ($edit_id == 0 || $edit_id == '') ? $edit_id = 1 : '';
     $ul = '0';
